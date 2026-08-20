@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>memories — a 3D interactive album</title>
+<meta name="description" content="A kraft-paper scrapbook in Three.js, with bone-skinned page curl and a fourteen-mesh pool that flips forever.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📓</text></svg>">
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="/">← Rayna Liu</a>
+
+  <h1>memories</h1>
+  <p class="tagline">A kraft-paper scrapbook that stands upright in the dark.</p>
+
+  <div class="summary">
+    <dl>
+      <dt>Stack</dt><dd>React Three Fiber, Three.js, GSAP, Zustand, Express</dd>
+      <dt>Live</dt><dd><a href="/album/demo">album demo</a></dd>
+      <dt>Source</dt><dd><a href="https://github.com/rainbow-rayna/album-ui">github.com/rainbow-rayna/album-ui</a></dd>
+    </dl>
+  </div>
+
+  <p>
+    The album stands upright in open darkness. Its pages fan out from the spine
+    like a carousel rather than lying flat, and each one flips with a curl that
+    bends along its length instead of pivoting rigidly. The cover is kraft paper
+    with a ribbon bow, spiral binding, and a scatter of glued-on hearts and stars.
+  </p>
+
+  <figure>
+    <div class="todo">Drop a screenshot or a looping GIF of the album mid-flip here.
+    This is the single highest-value addition to the page — the whole project is visual.</div>
+  </figure>
+
+  <h2>The interesting problem</h2>
+
+  <h3>Infinite pages, fourteen meshes</h3>
+
+  <p>
+    I wanted to flip forward indefinitely without a page count baked in anywhere.
+    Allocating a mesh per page doesn't survive that, so the album keeps a fixed
+    pool of fourteen <code>&lt;Page&gt;</code> meshes and slides a window across an
+    unbounded index.
+  </p>
+
+  <p>
+    As the current page changes, whichever mesh falls out of the window on one side
+    gets reassigned to the logical page entering on the other side, and snapped
+    instantly to its resting position at the far edge of the fan. The trick is that
+    the far edge is nearly edge-on to the camera, so a mesh teleporting into place
+    there is effectively invisible. No mesh is ever created after mount.
+  </p>
+
+  <h3>Pages that bend rather than pivot</h3>
+
+  <p>
+    A page rotating on a hinge reads as cardboard. Real paper resists at the spine,
+    gives in the middle, and whips at the outer edge. Each page is a skinned mesh
+    with a bone chain running its width, and the curl is distributed across those
+    bones with separate curve strengths for the inside face, the outside face, and
+    the fold itself. GSAP drives the easing so the flip accelerates and settles
+    rather than moving linearly.
+  </p>
+
+  <div class="callout">
+    <p>
+      The bone-chain approach and the GSAP easing pattern come from Wawa Sensei's
+      <a href="https://wawasensei.dev/tuto/3d-book-slider-landing-page-threejs-and-react">3D Book Slider</a>
+      tutorial. I reworked it for an upright, fanned layout instead of a flat lying
+      book, which changed the resting transforms and the camera framing substantially.
+    </p>
+  </div>
+
+  <h3>No binary assets at all</h3>
+
+  <p>
+    Every texture — the kraft grain, the ribbon, the spiral wire, the paper edges —
+    is drawn onto a <code>&lt;canvas&gt;</code> at runtime. Nothing ships as an image
+    file. That keeps the repo clean and the project runnable with no asset pipeline,
+    at the cost of a look that's stylised rather than photographic.
+  </p>
+
+  <h2>What I'd change</h2>
+
+  <ul>
+    <li>
+      The bundle is 1.17 MB, about a third of a megabyte gzipped, essentially all
+      Three.js. Nothing paints until all of it arrives, which is rough on a phone.
+      Splitting the 3D engine out and showing a poster image first would fix it.
+    </li>
+    <li>
+      Pages take a <code>content</code> prop but every one is currently
+      <code>{ kind: "blank" }</code>. The geometry and flip logic don't care what's
+      drawn on them, so photos are a matter of adding variants — I just haven't.
+    </li>
+    <li>
+      Fourteen is a guess. I never measured what the smallest pool is that still
+      hides the recycling at the widest fan angle.
+    </li>
+  </ul>
+
+  <div class="todo">
+    Add a section on what you learned or what surprised you. That's the part
+    readers remember, and it's the part only you can write.
+  </div>
+
+  <footer>
+    <a href="/">Home</a>
+    <a href="/album/demo">Live demo</a>
+    <a href="https://github.com/rainbow-rayna/album-ui">Source</a>
+  </footer>
+
+</div>
+</body>
+</html>

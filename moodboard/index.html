@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Moodboard</title>
+<meta name="description" content="A weekly moodboard where Gemini reads design vocabulary off every screenshot you pin.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📓</text></svg>">
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="/">← Rayna Liu</a>
+
+  <h1>AI Moodboard</h1>
+  <p class="tagline">A weekly scrapbook that tags its own references.</p>
+
+  <div class="summary">
+    <dl>
+      <dt>Stack</dt><dd>React, Express, Gemini, Drizzle, Postgres / PGlite</dd>
+      <dt>Live</dt><dd><a href="/moodboard/demo">moodboard demo</a></dd>
+      <dt>Source</dt><dd><a href="https://github.com/rainbow-rayna/ai-moodboard">github.com/rainbow-rayna/ai-moodboard</a></dd>
+    </dl>
+  </div>
+
+  <p>
+    Pin a screenshot to a day of the week and it comes back as a Polaroid, tagged
+    with five to ten design terms Gemini reads off the image — the vocabulary you'd
+    actually search by, like <em>Brutalist</em>, <em>Modular Grid</em>, or
+    <em>Muted Earth Tones</em>. Everything is stored per ISO week, so paging back
+    to last week finds it exactly as you left it.
+  </p>
+
+  <figure>
+    <div class="todo">Screenshot of a populated week goes here — ideally one where the
+    tags are legible, since the tagging is the whole point.</div>
+  </figure>
+
+  <h2>Decisions worth explaining</h2>
+
+  <h3>The model version is pinned, deliberately</h3>
+
+  <p>
+    It would have been easier to point at a <code>-latest</code> alias. I pinned an
+    exact model instead, because the failure mode of a floating alias is genuinely
+    nasty here: when it gets retired or overloaded, every upload silently falls back
+    to placeholder tags. The app keeps working, nothing errors, and the only symptom
+    is that the output quietly gets worse. A pinned version fails loudly instead.
+  </p>
+
+  <h3>The API key cannot reach the browser</h3>
+
+  <p>
+    Vite is never handed the <code>.env</code> file, and nothing in <code>src/</code>
+    talks to Google directly. The browser uploads bytes to this app's own Express
+    route, and that route is what calls Gemini. There's no path by which the key ends
+    up in a client bundle — not by convention, but structurally.
+  </p>
+
+  <h3>Zero-setup Postgres</h3>
+
+  <p>
+    Leave <code>DATABASE_URL</code> empty and the server runs
+    <a href="https://pglite.dev">PGlite</a> — real Postgres compiled to WebAssembly,
+    in-process, writing to a local directory. Same SQL, same Drizzle migrations, no
+    install step. Set the variable and it switches to a real server with the same
+    migration files. Cloning the repo and running it takes one command, which is
+    the difference between a project people try and one they don't.
+  </p>
+
+  <div class="callout">
+    <p>
+      Every environment variable is optional. With none set, the app still runs end
+      to end — uploads work, and images get clearly-labelled fallback terms instead
+      of analysed ones. That's what makes the public demo safe to leave running.
+    </p>
+  </div>
+
+  <h2>What I'd change</h2>
+
+  <ul>
+    <li>
+      Uploads are written to the local filesystem, which is fine on a laptop and
+      wrong on a host that wipes its disk on every deploy. Object storage is the
+      obvious fix and the reason the live demo needed work before it could ship.
+    </li>
+    <li>
+      Tags come back as free text, so <em>Muted Earth Tones</em> and
+      <em>Earthy Muted Palette</em> are separate tags forever. Some normalisation
+      pass would make the tag cluster far more useful.
+    </li>
+  </ul>
+
+  <div class="todo">
+    Add why you built this — what problem with your own reference-collecting
+    it was meant to solve, and whether it actually did.
+  </div>
+
+  <footer>
+    <a href="/">Home</a>
+    <a href="/moodboard/demo">Live demo</a>
+    <a href="https://github.com/rainbow-rayna/ai-moodboard">Source</a>
+  </footer>
+
+</div>
+</body>
+</html>
