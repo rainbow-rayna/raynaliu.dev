@@ -14,7 +14,7 @@
   --sans:  system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
   --mono:  ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
-  --measure: 42rem;
+  --measure: 45rem;
 }
 
 @media (prefers-color-scheme: dark) {
