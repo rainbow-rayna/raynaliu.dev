@@ -36,6 +36,31 @@
     This is the single highest-value addition to the page — the whole project is visual.</div>
   </figure>
 
+  <h2>Walkthrough</h2>
+
+  <div class="video">
+    <div class="todo">
+      Record 60–90 seconds: opening the cover, flipping several pages, then composing
+      a journal entry end to end so the AI reply and the generated page are both visible.
+      Export as <strong>MP4 (H.264)</strong>, not GIF — same clip, roughly a tenth the size.
+      Save it as <code>public/album/walkthrough.mp4</code>, then delete this box and
+      uncomment the video tag below.
+    </div>
+    <!--
+    <video controls preload="metadata" poster="/album/poster.jpg" width="1280" height="720">
+      <source src="/album/walkthrough.mp4" type="video/mp4">
+      Your browser can't play this video.
+      <a href="/album/walkthrough.mp4">Download it instead</a>.
+    </video>
+    -->
+  </div>
+
+  <p class="note">
+    The album's 3D behaviour needs no API key and runs entirely in the browser, so the
+    live demo below is the real thing. What the video adds is the journal flow — the
+    conversation and the generated page, which do call a model.
+  </p>
+
   <h2>The interesting problem</h2>
 
   <h3>Infinite pages, fourteen meshes</h3>
@@ -83,6 +108,104 @@
     file. That keeps the repo clean and the project runnable with no asset pipeline,
     at the cost of a look that's stylised rather than photographic.
   </p>
+
+  <h2>The prompts</h2>
+
+  <p>
+    The album's journal feature is mostly prompt engineering, so the prompts are the
+    part worth reading. All of them live in one server-side module rather than in the
+    client bundle — they're only meaningful next to an API key, and at this length
+    they'd be dead weight shipped to every browser that loads the 3D scene.
+  </p>
+
+  <h3>Getting it to stop interviewing you</h3>
+
+  <p>
+    Hand a chat model "ask this person about a memory" and it interrogates — a fresh
+    question every single turn, checklist-style. Tone instructions didn't fix it. What
+    did was constraining the <em>ratio</em> explicitly:
+  </p>
+
+  <div class="prompt">
+    <div class="prompt-label">CHAT_SYSTEM_PROMPT — excerpt</div>
+    <div class="prompt-body">Respond the way a real friend texting back would: most of the
+time, react to what they just said — relate to it, share a brief thought or
+feeling, agree, empathize, or just acknowledge it warmly — in 1-2 short
+sentences. Do NOT ask a question after every single message. Only ask a
+follow-up question when you're genuinely curious and it fits naturally, and
+even then keep it to well under half of your replies — across the
+conversation, reactions and comments should clearly outnumber questions.
+Never ask more than one question in a single reply.</div>
+  </div>
+
+  <p class="note">
+    "Well under half of your replies" and "reactions should outnumber questions" are
+    checkable by the model against its own output. "Be casual" isn't.
+  </p>
+
+  <h3>A parse contract instead of prose-scraping</h3>
+
+  <p>
+    The summarising step has to return four separate things — the journal entry, a mood
+    that selects a page layout, a caption, and an attribution. Rather than parsing them
+    back out of free text, the prompt specifies a tag format, and the mood is constrained
+    to four values that map directly onto layout families:
+  </p>
+
+  <pre><code>MOOD: scatter | grid | filmstrip | circles
+CAPTION: &lt;one or two lines&gt;
+AUTHOR: &lt;name, or "none"&gt;</code></pre>
+
+  <p>
+    Those four aren't arbitrary. Each one is a physical page layout — <code>scatter</code>
+    is overlapping photos at gentle angles, <code>filmstrip</code> is a horizontal
+    sequence, <code>circles</code> is playful cutouts. The model is choosing a
+    <em>composition</em>, and the mood word is just the handle it uses to do it.
+  </p>
+
+  <h3>Refusing to invent quotes</h3>
+
+  <p>
+    The caption is the one piece of AI-written reflection the person actually sees on the
+    finished page, which makes a fabricated quote or a misattribution genuinely bad. The
+    prompt gives two branches and makes the safe one the default:
+  </p>
+
+  <div class="prompt">
+    <div class="prompt-label">SUMMARY_SYSTEM_PROMPT — excerpt</div>
+    <div class="prompt-body">Two options: (1) a real quote you know, spoken or written by an
+actual identifiable person — only use this if you are confident the quote and
+its attribution are accurate, never fabricate a quote or misattribute one; or
+(2) Try to identify a somewhat niche principle or idea from any intellectual
+discipline<span class="elide">…</span>Then render that principle as a short original saying, aphorism, or
+proverb-style line you compose yourself in that same wisdom-literature
+register, when no real quote fits well or you aren't certain of one.</div>
+  </div>
+
+  <p class="note">
+    Uncertainty routes to composing something original and emitting
+    <code>AUTHOR: none</code> — so the failure mode is an unattributed aphorism rather
+    than a confident lie with a real person's name on it.
+  </p>
+
+  <h3>Three rungs down to no AI at all</h3>
+
+  <p>
+    Every AI path has a non-AI floor. With no key configured, the mood is classified by
+    keyword matching against word banks — <code>trip</code>, <code>hike</code>,
+    <code>airport</code> select <code>filmstrip</code>; <code>calm</code>,
+    <code>quiet</code>, <code>rain</code> select <code>grid</code> — and the caption comes
+    from a hand-written bank per family, real attributions included. The composer falls
+    back to six scripted questions and keeps the person's own words as the entry text.
+  </p>
+
+  <div class="callout">
+    <p>
+      The point isn't that the fallback is as good. It's that the album never shows an
+      error or a blank page, and never silently presents fallback output as though a
+      model produced it.
+    </p>
+  </div>
 
   <h2>What I'd change</h2>
 

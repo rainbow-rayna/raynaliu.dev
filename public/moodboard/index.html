@@ -37,6 +37,30 @@
     tags are legible, since the tagging is the whole point.</div>
   </figure>
 
+  <h2>Walkthrough</h2>
+
+  <div class="video">
+    <div class="todo">
+      Record 45–75 seconds: dragging a screenshot in, the analysis running, the Polaroid
+      landing with real tags, then paging back to a previous week. Export as
+      <strong>MP4 (H.264)</strong>, save as <code>public/moodboard/walkthrough.mp4</code>,
+      delete this box, and uncomment the tag below.
+    </div>
+    <!--
+    <video controls preload="metadata" poster="/moodboard/poster.jpg" width="1280" height="720">
+      <source src="/moodboard/walkthrough.mp4" type="video/mp4">
+      Your browser can't play this video.
+      <a href="/moodboard/walkthrough.mp4">Download it instead</a>.
+    </video>
+    -->
+  </div>
+
+  <p class="note">
+    The demo board is pre-populated with real analysis — the tags on it came back from
+    Gemini, generated ahead of time rather than at page load. The video is there to show
+    the step a pre-populated board can't: an image going in and vocabulary coming back out.
+  </p>
+
   <h2>Decisions worth explaining</h2>
 
   <h3>The model version is pinned, deliberately</h3>
@@ -71,9 +95,103 @@
 
   <div class="callout">
     <p>
-      Every environment variable is optional. With none set, the app still runs end
-      to end — uploads work, and images get clearly-labelled fallback terms instead
-      of analysed ones. That's what makes the public demo safe to leave running.
+      Every environment variable is optional. With none set the app still runs end to
+      end — uploads work, and images come back with clearly-labelled fallback terms
+      rather than an error. That makes the project trivial to clone and run, which is
+      a different goal from demonstrating it well; see the note on seeding below.
+    </p>
+  </div>
+
+  <h2>The prompt</h2>
+
+  <p>
+    Asking a vision model to "describe this image" gets you prose about what's in the
+    picture. That's useless for a reference library — you can't search it, and it doesn't
+    match how designers actually think about what they're collecting. The prompt gives
+    the model a role, a vocabulary space, and a shape for its answer.
+  </p>
+
+  <div class="prompt">
+    <div class="prompt-label">ANALYSIS_PROMPT</div>
+    <div class="prompt-body">You are a design critic building a visual reference library.
+
+Look at this image and name the design characteristics you can actually see.
+Return between 5 and 10 terms.
+
+Rules for each term:
+- Established design terminology only — the vocabulary a designer would
+  search by. Draw across style movements (e.g. Brutalist, Swiss Style,
+  Memphis, Bauhaus, Y2K, Skeuomorphic), layout (e.g. Modular Grid,
+  Asymmetric Balance, Split Screen, Broken Grid), typography (e.g. Grotesque
+  Sans, Variable Weight, Oversized Type, Tight Tracking), colour (e.g. Muted
+  Earth Tones, Duotone, High Chroma Accent, Monochrome), and material or
+  texture (e.g. Glassmorphism, Grain Overlay, Halftone, Soft Shadow).
+- 1 to 3 words. Title Case. No sentences, no explanations, no hashtags, no
+  trailing punctuation.
+- Concrete and visible in this image. Do not guess at brand, purpose, or
+  content you cannot see.
+- No duplicates and no near-synonyms of each other. Prefer specific over
+  generic.
+- Order them most to least defining.</div>
+  </div>
+
+  <p>
+    The five named categories do most of the work. Without them the model fixates on
+    colour and misses structure entirely — you get ten shades of beige and nothing about
+    the grid. Naming the axes forces coverage across them.
+  </p>
+
+  <p>
+    <strong>"Do not guess at brand, purpose, or content you cannot see"</strong> is there
+    because the failure mode of a vision model on a screenshot is confident invention. It
+    will happily tell you it's looking at a fintech landing page. That's not searchable
+    design vocabulary, and it's frequently wrong.
+  </p>
+
+  <h3>Structured output, so the happy path is a parse</h3>
+
+  <p>
+    The request pins <code>responseMimeType</code> and a <code>responseSchema</code>, so
+    Gemini is constrained to answer in a shape that can be parsed rather than scraped:
+  </p>
+
+  <pre><code>{
+  type: "OBJECT",
+  properties: {
+    terms: { type: "ARRAY", items: { type: "STRING" },
+             minItems: 5, maxItems: 10 }
+  },
+  required: ["terms"]
+}</code></pre>
+
+  <p>
+    The response still gets validated with Zod afterwards. A schema makes malformed
+    output unlikely, not impossible — a model can still return fenced JSON, a short
+    array, or nothing at all, and the network can fail outright.
+  </p>
+
+  <h3>The failure ladder</h3>
+
+  <p>
+    Requests time out at 25 seconds and retry once on <code>429</code>,
+    <code>500</code>, <code>502</code>, <code>503</code>, and <code>504</code> —
+    the statuses that mean <em>busy, try again</em>, as opposed to <em>this request is
+    wrong</em>. Retrying a 400 just wastes time and quota.
+  </p>
+
+  <p>
+    Everything that still fails lands on the same floor: terms derived from what's
+    knowable without a model — aspect ratio, resolution band, file type, file size —
+    ending with <code>Awaiting Analysis</code>, and recorded in the database as a
+    fallback rather than as analysis.
+  </p>
+
+  <div class="callout">
+    <p>
+      That honesty is also why the public demo is seeded rather than keyless. A visitor
+      with no key would see <code>Landscape Format · PNG Source · Medium File ·
+      Awaiting Analysis</code> — which is a correct answer, faithfully labelled, and
+      demonstrates nothing whatsoever about the thing the project is for.
     </p>
   </div>
 
