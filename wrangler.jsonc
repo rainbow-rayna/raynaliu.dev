@@ -1,0 +1,14 @@
+{
+  // Static-assets-only Worker: no server code, Cloudflare just serves ./public
+  // from the edge. When the project demos go live, add a "main" entry here
+  // pointing at a Worker script to proxy /album/demo and /moodboard/demo.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "raynaliu-dev",
+  "compatibility_date": "2026-08-19",
+  "assets": {
+    "directory": "./public",
+    // Serves /album/index.html for /album, and adds the trailing slash.
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}
