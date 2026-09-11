@@ -124,6 +124,23 @@ code {
 
 .entry p { margin: 0 0 0.4rem; color: var(--muted); }
 
+/* Problem / solution / impact rows: a fixed label column so every entry lines up */
+.entry-pitch {
+  margin: 0.15rem 0 0.7rem;
+  display: grid;
+  grid-template-columns: 5.25rem 1fr;
+  gap: 0.5rem 1rem;
+}
+.entry-pitch dt {
+  color: var(--faint);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding-top: 0.4rem; /* sits on the first line of its row */
+}
+.entry-pitch dd { margin: 0; color: var(--muted); }
+
 .entry-links { font-size: 0.85rem; }
 .entry-links a { margin-right: 1rem; }
 
@@ -206,6 +223,8 @@ footer a { margin-right: 1rem; }
   .wrap { padding: 3rem 0 4rem; }
   .summary dl { grid-template-columns: 1fr; gap: 0.1rem 0; }
   .summary dt { margin-top: 0.5rem; }
+  .entry-pitch { grid-template-columns: 1fr; gap: 0.1rem 0; }
+  .entry-pitch dt { padding-top: 0.55rem; }
 }
 
 /* ── video ────────────────────────────────────────────────────── */
